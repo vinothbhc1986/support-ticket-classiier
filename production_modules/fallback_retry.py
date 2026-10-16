@@ -38,7 +38,7 @@ from production_modules.prompt_versioning import get_active_prompt
 load_dotenv()
 logger = logging.getLogger(__name__)
 
-_DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "gpt-4o-mini")
+_DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "llama3.2:3b").strip()
 
 SAFE_CLASSIFICATION = TicketClassification(
     issue_category=IssueCategory.OTHER,

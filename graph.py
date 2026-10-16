@@ -14,7 +14,6 @@ import os
 from dotenv import load_dotenv
 from langgraph.graph import StateGraph, START, END
 
-from schema import TicketClassification
 from production_modules.pii_redaction import redact_pii
 from production_modules.prompt_injection import check_injection
 from production_modules.prompt_versioning import get_active_prompt, get_active_version
@@ -26,7 +25,7 @@ from production_modules.fallback_retry import classify_with_fallback, SAFE_CLASS
 load_dotenv()
 logger = logging.getLogger(__name__)
 
-DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "gpt-4o-mini")
+DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "llama3.2:3b").strip()
 
 
 # ---------------------------------------------------------------------------
@@ -207,3 +206,55 @@ def run_pipeline(ticket_text: str, channel: str = "web_form") -> dict:
         "injection_blocked": False,
     }
     return graph.invoke(initial_state)
+
+
+if __name__ == "__main__":
+
+    sample_ticket = (
+        "Hello, I was charged twice for order #98765. "
+        "My email is customer@example.com and phone is 555-0199. "
+        "Please refund the extra charge immediately!"
+    )
+
+    print(f"Input Ticket:\n{sample_ticket}\n")
+    print("Running pipeline...\n")
+
+    result = run_pipeline(sample_ticket)
+
+    print("=== Pipeline Summary ===")
+    print(f"PII Detected      : {result.get('pii_detected')}")
+    print(f"Redacted Text     : {result.get('redacted_ticket')}")
+    print(f"Injection Blocked : {result.get('injection_blocked')}")
+    print(f"Validation Status : {result.get('validation_status')}")
+    print(f"Prompt Version    : {result.get('prompt_version')}")
+    print(f"Cost Info         : {result.get('cost_info')}")
+    print("\n=== Classification Result ===")
+    if result.get("classification"):
+        print(result["classification"].model_dump_json(indent=2))
+    else:
+        print(f"Classification failed: {result.get('error')}")
+
+
+
+# What It Does:
+
+# When executed, it runs a sample support ticket through the entire LangGraph pipeline:
+
+# pii_redact
+# ⟶
+# injection_check
+# ⟶
+# classify
+# ⟶
+# validate
+# ⟶
+# cost_log
+# pii_redact⟶injection_check⟶classify⟶validate⟶cost_log
+
+# And prints:
+
+# PII Redaction results (masks email and phone number)
+# Prompt injection check
+# Validation status
+# Token and cost stats
+# The final structured JSON classification (issue category, assigned team, priority, sentiment, and reasoning)

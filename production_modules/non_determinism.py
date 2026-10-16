@@ -19,26 +19,38 @@ from schema import TicketClassification
 
 load_dotenv()
 
+_DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "llama3.2:3b").strip()
+_BASE_URL = os.getenv("OPENAI_BASE_URL")
 
-def build_deterministic_llm(model: str = "gpt-4o-mini", seed: int = 42) -> ChatOpenAI:
+
+def build_deterministic_llm(model: str = _DEFAULT_MODEL, seed: int = 42) -> ChatOpenAI:
     """
     temperature=0  → greedy decoding, most probable token always chosen.
     seed           → ensures identical sampling sequence across calls (where supported).
     Together they give near-identical outputs for the same input.
     """
-    return ChatOpenAI(
-        model=model,
-        temperature=0,
-        seed=seed,
-    )
+    kwargs = {
+        "model": model,
+        "temperature": 0,
+        "seed": seed,
+    }
+    if _BASE_URL:
+        kwargs["base_url"] = _BASE_URL
+    return ChatOpenAI(**kwargs)
 
 
-def build_creative_llm(model: str = "gpt-4o-mini", temperature: float = 0.7) -> ChatOpenAI:
+def build_creative_llm(model: str = _DEFAULT_MODEL, temperature: float = 0.7) -> ChatOpenAI:
     """
     Higher temperature for tasks where variation is desirable, e.g.
     generating empathetic reply drafts or brainstorming resolutions.
     """
-    return ChatOpenAI(model=model, temperature=temperature)
+    kwargs = {
+        "model": model,
+        "temperature": temperature,
+    }
+    if _BASE_URL:
+        kwargs["base_url"] = _BASE_URL
+    return ChatOpenAI(**kwargs)
 
 
 def classify_ticket(ticket_text: str, llm: ChatOpenAI) -> TicketClassification:
@@ -57,8 +69,8 @@ def run_consistency_test(ticket_text: str, runs: int = 5) -> dict:
     Returns a summary dict.
     """
     llm = build_deterministic_llm()
-    results = [classify_ticket(ticket_text, llm) for _ in range(runs)]
-    categories = [r.issue_category for r in results]
+    results = [classify_ticket(ticket_text, llm) for _ in range(runs)]  
+    categories = [r.issue_category for r in results] 
     all_match = len(set(categories)) == 1
     return {
         "all_match": all_match,
@@ -74,7 +86,7 @@ if __name__ == "__main__":
     ticket = "My package was supposed to arrive 5 days ago. Where is it?"
 
     print("Running consistency test (5 runs, temperature=0, seed=42)...")
-    summary = run_consistency_test(ticket)
+    summary = run_consistency_test(ticket, 3)
     print(f"All outputs match: {summary['all_match']}")
     print(f"Category        : {summary['category']}")
     print(f"All categories  : {summary['all_categories']}")

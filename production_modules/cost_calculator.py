@@ -38,8 +38,7 @@ class SessionCostTracker:
         self._total_cost_usd: float = 0.0
         self._call_count: int = 0
 
-    def record(self, cost_info: CostInfo) -> None:
-        self._total_input_tokens += cost_info.input_tokens
+    def record(self, cost_info: CostInfo) -> None: 
         self._total_output_tokens += cost_info.output_tokens
         self._total_cost_usd += cost_info.total_cost_usd
         self._call_count += 1

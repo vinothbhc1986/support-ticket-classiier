@@ -24,7 +24,8 @@ from schema import TicketClassification
 
 load_dotenv()
 
-_DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "gpt-4o-mini")
+_DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "llama3.2:3b").strip()
+_BASE_URL = os.getenv("OPENAI_BASE_URL")
 
 DEFAULT_SYSTEM_PROMPT = "You are an expert customer support ticket classifier."
 
@@ -49,7 +50,10 @@ def classify_with_function_calling(
     model: str = _DEFAULT_MODEL,
     seed: int = 42,
 ) -> TicketClassification:
-    llm = ChatOpenAI(model=model, temperature=0, seed=seed)
+    kwargs = {"model": model, "temperature": 0, "seed": seed}
+    if _BASE_URL:
+        kwargs["base_url"] = _BASE_URL
+    llm = ChatOpenAI(**kwargs)
     structured_llm = llm.with_structured_output(TicketClassification)
 
     prompt = ChatPromptTemplate.from_messages([
@@ -82,12 +86,15 @@ def classify_with_json_mode(
     schema_escaped = schema_json.replace("{", "{{").replace("}", "}}")
     full_system = f"{system_prompt}\n\nReturn ONLY valid JSON matching this schema:\n{schema_escaped}"
 
-    llm = ChatOpenAI(
-        model=model,
-        temperature=0,
-        seed=seed,
-        model_kwargs={"response_format": {"type": "json_object"}},
-    )
+    kwargs = {
+        "model": model,
+        "temperature": 0,
+        "seed": seed,
+        "model_kwargs": {"response_format": {"type": "json_object"}},
+    }
+    if _BASE_URL:
+        kwargs["base_url"] = _BASE_URL
+    llm = ChatOpenAI(**kwargs)
 
     prompt = ChatPromptTemplate.from_messages([
         ("system", full_system),

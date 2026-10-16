@@ -46,7 +46,7 @@ class ClassifyResponse(BaseModel):
 # Startup banner
 # ---------------------------------------------------------------------------
 def print_banner():
-    model = os.getenv("DEFAULT_MODEL", "gpt-4o-mini")
+    model = os.getenv("DEFAULT_MODEL", "llama3.2:3b").strip()
     prompt_version = get_active_version()
     pii_enabled = True   # always on in this build
     cost_tracking = os.getenv("LOG_COSTS", "true").lower() == "true"

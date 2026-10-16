@@ -1,0 +1,10 @@
+What is PII?
+
+    PII stands for Personally Identifiable Information — any data that could be used to identify, contact, or locate a specific individual.
+    Eg: payment cards
+
+PII Redaction:
+
+    PII Redaction is the process of identifying and masking (or removing) sensitive personal details from text before it is processed, stored, or sent to an external service.
+
+python production_modules/pii_redaction.py
